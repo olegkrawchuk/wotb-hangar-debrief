@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Hangar Debrief</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -129,19 +130,22 @@
 <script>
 (function(){
   var params = new URLSearchParams(location.search);
-  var accountId = params.get('account_id') || 'DEMO-000000';
-  var realm = (params.get('realm') || 'eu').toUpperCase();
-  document.getElementById('bar').title = 'Account ' + accountId + ' • ' + realm + ' • demo data, not wired to WG API yet';
+  var realmRaw = params.get('realm') || '';
+  // int64 values in this engine's expression language stringify with a
+  // trailing "L" (e.g. literal defaults like "22272L" seen in shipped
+  // YAML) - session.dbid is int64, so str(session.dbid) likely does too.
+  var accountId = (params.get('account_id') || '').replace(/L$/i, '');
+  var hasRealAccount = /^\d+$/.test(accountId);
 
-  var STORAGE_KEY = 'hangar-debrief-session-' + accountId;
-  var state = load() || { kills: 0, deaths: 0, battles: 0, wins: 0 };
+  var bar = document.getElementById('bar');
+  if (!hasRealAccount){
+    bar.title = 'No account_id in URL - nothing to show';
+    bar.querySelectorAll('.value').forEach(function(el){ el.textContent = '—'; });
+    return;
+  }
+  bar.title = 'Account ' + accountId + ' • ' + realmRaw;
 
-  function load(){
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e){ return null; }
-  }
-  function save(){
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
-  }
+  var state = { kills: 0, deaths: 0, battles: 0, wins: 0 };
 
   function flash(id){
     var el = document.getElementById(id);
@@ -159,29 +163,52 @@
     (changed || []).forEach(flash);
   }
 
-  document.getElementById('resetBtn').addEventListener('click', function(){
-    state = { kills: 0, deaths: 0, battles: 0, wins: 0 };
-    save();
+  var BASELINE_KEY = 'hangar-debrief-baseline-' + accountId;
+
+  function loadBaseline(){
+    try { return JSON.parse(localStorage.getItem(BASELINE_KEY)); } catch(e){ return null; }
+  }
+  function saveBaseline(b){
+    try { localStorage.setItem(BASELINE_KEY, JSON.stringify(b)); } catch(e){}
+  }
+
+  function applyRealTotals(totals){
+    var baseline = loadBaseline();
+    if (!baseline){
+      baseline = totals;
+      saveBaseline(baseline);
+    }
+    state = {
+      battles: totals.battles - baseline.battles,
+      wins: totals.wins - baseline.wins,
+      kills: totals.frags - baseline.frags,
+      deaths: (totals.battles - totals.survived_battles) - (baseline.battles - baseline.survived_battles)
+    };
     render(['kills','winrate','deaths']);
+  }
+
+  function fetchRealStats(){
+    fetch('/api/stats?account_id=' + encodeURIComponent(accountId) + '&realm=' + encodeURIComponent(realmRaw))
+      .then(function(r){ return r.json(); })
+      .then(function(json){
+        if (!json || !json.ok || !json.wg || json.wg.status !== 'ok') return;
+        var entry = json.wg.data && json.wg.data[accountId];
+        if (!entry || !entry.statistics || !entry.statistics.all) return;
+        applyRealTotals(entry.statistics.all);
+      })
+      .catch(function(){ /* transient network hiccup - keep last known values on screen */ });
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    localStorage.removeItem(BASELINE_KEY);
+    fetchRealStats();
   });
 
   render([]);
 
-  function simulateBattle(){
-    var win = Math.random() > 0.45;
-    var kills = Math.random() > 0.35 ? Math.round(Math.random() * 3) : 0;
-    var died = Math.random() > 0.4;
-    state.battles += 1;
-    state.wins += win ? 1 : 0;
-    state.kills += kills;
-    state.deaths += died ? 1 : 0;
-    save();
-    render(['kills','winrate','deaths']);
-  }
-
-  setTimeout(function(){
-    simulateBattle();
-    setInterval(simulateBattle, 7000 + Math.random() * 5000);
-  }, 2000);
+  // The widget's whole page is reloaded by the game every time the hangar
+  // screen is (re)shown, e.g. after a battle - that reload is the refresh
+  // mechanism, so one fetch per page load is enough. No interval needed.
+  fetchRealStats();
 })();
 </script>
