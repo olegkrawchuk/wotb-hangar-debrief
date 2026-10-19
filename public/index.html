@@ -207,8 +207,17 @@
 
   var bar = document.getElementById('bar');
   if (!hasRealAccount){
+    // DIAGNOSTIC MODE: show exactly what query string the game actually
+    // sent, split across the three value slots so it's screenshottable.
     bar.title = 'No account_id in URL - nothing to show';
-    bar.querySelectorAll('.value').forEach(function(el){ el.textContent = '—'; });
+    var raw = location.search || '(empty)';
+    var chunks = [raw.slice(0, 11), raw.slice(11, 22), raw.slice(22, 33)];
+    var vals = bar.querySelectorAll('.value');
+    [0,1,2].forEach(function(i){
+      vals[i].style.fontSize = '10px';
+      vals[i].style.letterSpacing = '0';
+      vals[i].textContent = chunks[i] || (i === 2 ? 'len=' + raw.length : '(end)');
+    });
     return;
   }
   bar.title = 'Account ' + accountId + ' • ' + realmRaw;
