@@ -1,0 +1,309 @@
+<title>Hangar Debrief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12151a;
+    --panel:#1b2027;
+    --panel-raised:#232a32;
+    --border:#2b323b;
+    --text:#dde2e7;
+    --text-dim:#8b95a1;
+    --accent:#9aa66b;
+    --accent-strong:#e3a23c;
+    --good:#5fbf6e;
+    --bad:#e2605a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Chakra Petch', 'Segoe UI', sans-serif;
+    display:flex;
+    justify-content:center;
+    padding:14px;
+    min-height:100vh;
+  }
+  .card{
+    width:100%;
+    max-width:348px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow:0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.35);
+  }
+  .head{
+    padding:12px 14px 10px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg, rgba(154,166,107,0.10), transparent);
+  }
+  .eyebrow{
+    font-family:'Teko', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.14em;
+    color:var(--accent);
+    text-transform:uppercase;
+  }
+  .title-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:8px;
+    margin-top:2px;
+  }
+  .title{
+    font-family:'Teko', sans-serif;
+    font-size:28px;
+    font-weight:600;
+    letter-spacing:0.01em;
+    line-height:1;
+  }
+  .badge{
+    flex:0 0 auto;
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:#1a140a;
+    background:var(--accent-strong);
+    padding:3px 7px;
+    border-radius:3px;
+  }
+  .account-line{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--text-dim);
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .account-line b{color:var(--text);font-weight:600;}
+  .timer{
+    padding:10px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:1px solid var(--border);
+  }
+  .timer .label{
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  .timer .value{
+    font-variant-numeric:tabular-nums;
+    font-size:18px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1px;
+    background:var(--border);
+  }
+  .tile{
+    background:var(--panel);
+    padding:10px 12px 11px;
+    position:relative;
+    transition:background 300ms ease;
+  }
+  .tile.flash{background:var(--panel-raised);}
+  .tile .label{
+    font-size:10.5px;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  .tile .value{
+    font-variant-numeric:tabular-nums;
+    font-size:22px;
+    font-weight:600;
+    line-height:1.25;
+    margin-top:2px;
+  }
+  .tile .delta{
+    display:inline-block;
+    margin-top:3px;
+    font-size:11px;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    min-height:14px;
+  }
+  .delta.good{color:var(--good);}
+  .delta.bad{color:var(--bad);}
+  .delta.neutral{color:var(--text-dim);}
+  .foot{
+    padding:8px 14px 11px;
+    font-size:10.5px;
+    color:var(--text-dim);
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .foot .dot{
+    display:inline-block;
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--accent);
+    margin-right:5px;
+    vertical-align:1px;
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .tile{transition:none;}
+    .foot .dot{animation:none;}
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:0.35;}
+  }
+</style>
+
+<div class="card">
+  <div class="head">
+    <div class="eyebrow">Session · Hangar Debrief</div>
+    <div class="title-row">
+      <div class="title" id="playerLine">Loading…</div>
+      <div class="badge">Demo data</div>
+    </div>
+    <div class="account-line">
+      <span>Account <b id="accountId">—</b></span>
+      <span>Realm <b id="realm">—</b></span>
+    </div>
+  </div>
+
+  <div class="timer">
+    <span class="label">Time this session</span>
+    <span class="value" id="elapsed">00:00</span>
+  </div>
+
+  <div class="grid">
+    <div class="tile" data-tile="battles">
+      <div class="label">Battles</div>
+      <div class="value" id="battles">0</div>
+      <div class="delta neutral" id="battlesDelta">&nbsp;</div>
+    </div>
+    <div class="tile" data-tile="winrate">
+      <div class="label">Win rate</div>
+      <div class="value" id="winrate">—</div>
+      <div class="delta neutral" id="winrateDelta">&nbsp;</div>
+    </div>
+    <div class="tile" data-tile="damage">
+      <div class="label">Damage dealt</div>
+      <div class="value" id="damage">0</div>
+      <div class="delta neutral" id="damageDelta">&nbsp;</div>
+    </div>
+    <div class="tile" data-tile="avgdamage">
+      <div class="label">Avg. damage</div>
+      <div class="value" id="avgdamage">0</div>
+      <div class="delta neutral" id="avgdamageDelta">&nbsp;</div>
+    </div>
+    <div class="tile" data-tile="credits">
+      <div class="label">Credits earned</div>
+      <div class="value" id="credits">0</div>
+      <div class="delta neutral" id="creditsDelta">&nbsp;</div>
+    </div>
+    <div class="tile" data-tile="xp">
+      <div class="label">XP earned</div>
+      <div class="value" id="xp">0</div>
+      <div class="delta neutral" id="xpDelta">&nbsp;</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span><span class="dot"></span>Live mock — not wired to WG API yet</span>
+    <span id="clock">—</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  var accountId = params.get('account_id') || 'DEMO-000000';
+  var realm = (params.get('realm') || 'eu').toUpperCase();
+  var playerName = params.get('player') || 'Commander';
+
+  document.getElementById('accountId').textContent = accountId;
+  document.getElementById('realm').textContent = realm;
+  document.getElementById('playerLine').textContent = playerName;
+
+  var state = {
+    battles: 0,
+    wins: 0,
+    damage: 0,
+    credits: 0,
+    xp: 0
+  };
+
+  function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+
+  function render(prev){
+    document.getElementById('battles').textContent = state.battles;
+    var wr = state.battles ? (state.wins / state.battles * 100) : 0;
+    document.getElementById('winrate').textContent = state.battles ? wr.toFixed(1) + '%' : '—';
+    document.getElementById('damage').textContent = fmt(state.damage);
+    document.getElementById('avgdamage').textContent = state.battles ? fmt(state.damage / state.battles) : '0';
+    document.getElementById('credits').textContent = fmt(state.credits);
+    document.getElementById('xp').textContent = fmt(state.xp);
+
+    if (prev){
+      setDelta('battlesDelta', state.battles - prev.battles, '', true);
+      setDelta('damageDelta', state.damage - prev.damage, '', true);
+      setDelta('creditsDelta', state.credits - prev.credits, '', true);
+      setDelta('xpDelta', state.xp - prev.xp, '', true);
+    }
+  }
+
+  function setDelta(id, delta, suffix, isCount){
+    var el = document.getElementById(id);
+    if (!delta){ el.innerHTML = '&nbsp;'; el.className = 'delta neutral'; return; }
+    var sign = delta > 0 ? '+' : '';
+    el.textContent = sign + fmt(delta) + suffix;
+    el.className = 'delta ' + (delta > 0 ? 'good' : 'bad');
+  }
+
+  function flash(tile){
+    var el = document.querySelector('.tile[data-tile="' + tile + '"]');
+    if (!el) return;
+    el.classList.add('flash');
+    setTimeout(function(){ el.classList.remove('flash'); }, 900);
+  }
+
+  function simulateBattle(){
+    var prev = Object.assign({}, state);
+    var win = Math.random() > 0.45;
+    var dmg = 400 + Math.round(Math.random() * 1800);
+    state.battles += 1;
+    state.wins += win ? 1 : 0;
+    state.damage += dmg;
+    state.credits += 8000 + Math.round(Math.random() * 20000) + (win ? 6000 : 0);
+    state.xp += 250 + Math.round(Math.random() * 900) + (win ? 150 : 0);
+    render(prev);
+    ['battles','winrate','damage','avgdamage','credits','xp'].forEach(flash);
+  }
+
+  render(null);
+
+  var startedAt = Date.now();
+  function tick(){
+    var s = Math.floor((Date.now() - startedAt) / 1000);
+    var mm = String(Math.floor(s / 60)).padStart(2, '0');
+    var ss = String(s % 60).padStart(2, '0');
+    document.getElementById('elapsed').textContent = mm + ':' + ss;
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  setTimeout(function(){
+    simulateBattle();
+    setInterval(simulateBattle, 7000 + Math.random() * 4000);
+  }, 2500);
+})();
+</script>
