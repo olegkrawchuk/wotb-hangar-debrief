@@ -202,22 +202,16 @@
   // int64 values in this engine's expression language stringify with a
   // trailing "L" (e.g. literal defaults like "22272L" seen in shipped
   // YAML) - session.dbid is int64, so str(session.dbid) likely does too.
-  var accountId = (params.get('account_id') || '').replace(/L$/i, '');
+  // session.dbid can only be rendered via str1000Separated() in the game's
+  // own expression language, which inserts thousand-separator spaces -
+  // strip anything that isn't a digit.
+  var accountId = (params.get('account_id') || '').replace(/\D/g, '');
   var hasRealAccount = /^\d+$/.test(accountId);
 
   var bar = document.getElementById('bar');
   if (!hasRealAccount){
-    // DIAGNOSTIC MODE: show exactly what query string the game actually
-    // sent, split across the three value slots so it's screenshottable.
     bar.title = 'No account_id in URL - nothing to show';
-    var raw = location.search || '(empty)';
-    var chunks = [raw.slice(0, 11), raw.slice(11, 22), raw.slice(22, 33)];
-    var vals = bar.querySelectorAll('.value');
-    [0,1,2].forEach(function(i){
-      vals[i].style.fontSize = '10px';
-      vals[i].style.letterSpacing = '0';
-      vals[i].textContent = chunks[i] || (i === 2 ? 'len=' + raw.length : '(end)');
-    });
+    bar.querySelectorAll('.value').forEach(function(el){ el.textContent = '—'; });
     return;
   }
   bar.title = 'Account ' + accountId + ' • ' + realmRaw;

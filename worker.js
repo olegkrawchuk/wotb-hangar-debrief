@@ -31,7 +31,10 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/stats") {
-      const accountId = url.searchParams.get("account_id");
+      // account_id arrives formatted by the game's str1000Separated() (the
+      // only function that could render session.dbid at all) - strip
+      // thousand-separator spaces/encoding artifacts before validating.
+      const accountId = (url.searchParams.get("account_id") || "").replace(/\D/g, "");
       const realmRaw = url.searchParams.get("realm") || "";
       const host = resolveHost(realmRaw);
 
